@@ -1,0 +1,915 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AI-Driven Event Management System</title>
+<meta name="description" content="A multi-agent AI concept for running TEDx-style events — one assistant per team, an orchestrator watching the seams between them, a human always holding the final call.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#15130e;
+    --bg-raised:#211c14;
+    --bg-inset:#0d0b08;
+    --line:#3c3524;
+    --line-soft:#2a2418;
+    --ink:#f4efe1;
+    --ink-dim:#b8ae97;
+    --ink-faint:#867d68;
+    --amber:#e7a23a;
+    --amber-soft:rgba(231,162,58,.14);
+    --blue:#74b8d6;
+    --blue-soft:rgba(116,184,214,.14);
+    --ok:#83b26c;
+    --ok-soft:rgba(131,178,108,.16);
+    --danger:#c8604a;
+    --danger-soft:rgba(200,96,74,.16);
+    --radius:10px;
+    --font-display:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+    color-scheme:dark;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  body{
+    margin:0;
+    background:var(--bg);
+    background-image:radial-gradient(ellipse 900px 500px at 50% -10%, rgba(231,162,58,.08), transparent 60%);
+    color:var(--ink);
+    font-family:var(--font-display);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  img{max-width:100%;}
+  [hidden]{display:none!important;}
+  ::selection{background:var(--amber-soft);color:var(--ink);}
+
+  a{color:inherit;}
+  h1,h2,h3{font-family:var(--font-display);font-weight:800;letter-spacing:-.01em;text-wrap:balance;margin:0;}
+  p{margin:0;}
+  button{font-family:inherit;}
+
+  .wrap{
+    max-width:1040px;
+    margin:0 auto;
+    padding-inline:24px;
+  }
+
+  .mono{font-family:var(--font-mono);}
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--amber);
+  }
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    position:sticky;
+    top:env(safe-area-inset-top,0px);
+    z-index:20;
+    background:rgba(21,19,14,.86);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .topbar-inner{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    padding-block:12px;
+    flex-wrap:wrap;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:var(--font-mono);
+    font-size:13px;
+  }
+  .brand .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--amber);
+    box-shadow:0 0 0 3px var(--amber-soft);
+  }
+  .topnav{
+    display:flex;
+    gap:20px;
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    color:var(--ink-dim);
+    flex-wrap:wrap;
+  }
+  .topnav a{text-decoration:none;border-bottom:1px solid transparent;padding-bottom:2px;}
+  .topnav a:hover,.topnav a:focus-visible{color:var(--ink);border-color:var(--amber);}
+  .pilot-badge{
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    color:var(--ink-faint);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:4px 10px;
+    white-space:nowrap;
+  }
+
+  /* ---------- hero ---------- */
+  .hero{padding-block:64px 40px;}
+  .hero h1{font-size:clamp(30px,5.4vw,48px);line-height:1.06;max-width:15ch;}
+  .hero-sub{
+    margin-top:18px;
+    max-width:56ch;
+    font-size:17px;
+    color:var(--ink-dim);
+  }
+  .hero-actions{
+    display:flex;
+    gap:12px;
+    margin-top:28px;
+    flex-wrap:wrap;
+  }
+  .btn{
+    font-family:var(--font-mono);
+    font-size:13px;
+    letter-spacing:.02em;
+    text-decoration:none;
+    border-radius:8px;
+    padding:11px 18px;
+    border:1px solid var(--line);
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    cursor:pointer;
+    background:transparent;
+    color:var(--ink);
+    transition:border-color .15s ease, background .15s ease, transform .1s ease;
+  }
+  .btn:hover{border-color:var(--amber);background:var(--amber-soft);}
+  .btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{background:var(--amber);border-color:var(--amber);color:#1c1508;font-weight:700;}
+  .btn-primary:hover{background:#f0ad4b;}
+
+  .crew-row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:32px;
+  }
+  .crew-pill{
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    color:var(--ink-faint);
+    border:1px solid var(--line-soft);
+    border-radius:999px;
+    padding:5px 11px;
+  }
+
+  .hero-console{
+    margin-top:36px;
+    background:var(--bg-inset);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px 18px;
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    color:var(--ink-dim);
+    max-width:640px;
+    overflow-x:auto;
+  }
+  .hero-console .line{white-space:pre;padding-block:2px;}
+  .hero-console .t{color:var(--ink-faint);}
+  .hero-console .tag{color:var(--blue);}
+  .hero-console .tag.orc{color:var(--amber);}
+
+  /* ---------- sections ---------- */
+  .section{
+    padding-block:56px;
+    border-top:1px solid var(--line-soft);
+  }
+  .section-head{
+    display:flex;
+    align-items:baseline;
+    gap:14px;
+    margin-bottom:28px;
+    flex-wrap:wrap;
+  }
+  .cue-num{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--ink-faint);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:3px 8px;
+  }
+  .section h2{font-size:clamp(22px,3.4vw,30px);}
+  .section-intro{
+    max-width:62ch;
+    color:var(--ink-dim);
+    margin-bottom:28px;
+    font-size:15.5px;
+  }
+
+  .cards{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+  }
+  @media (max-width:720px){.cards{grid-template-columns:1fr;}}
+  .card{
+    background:var(--bg-raised);
+    border:1px solid var(--line-soft);
+    border-radius:var(--radius);
+    padding:18px;
+  }
+  .card .k{font-family:var(--font-mono);font-size:11.5px;color:var(--amber);letter-spacing:.06em;text-transform:uppercase;}
+  .card p{margin-top:8px;font-size:14.5px;color:var(--ink-dim);}
+  .card h3{font-size:16px;margin-top:2px;}
+
+  .layer-list{display:flex;flex-direction:column;gap:14px;margin-top:8px;}
+  .layer{
+    display:grid;
+    grid-template-columns:150px 1fr;
+    gap:18px;
+    background:var(--bg-raised);
+    border:1px solid var(--line-soft);
+    border-radius:var(--radius);
+    padding:18px 20px;
+  }
+  @media (max-width:640px){.layer{grid-template-columns:1fr;}}
+  .layer .name{font-family:var(--font-mono);font-size:13px;color:var(--blue);letter-spacing:.02em;}
+  .layer .name small{display:block;color:var(--ink-faint);font-size:11px;margin-top:4px;}
+  .layer p{color:var(--ink-dim);font-size:14.5px;}
+
+  .hypothesis{
+    margin-top:18px;
+    font-size:13px;
+    color:var(--ink-faint);
+    border-left:2px solid var(--amber);
+    padding-left:12px;
+    max-width:70ch;
+  }
+
+  figure.diagram{margin:36px 0 8px;}
+  .diagram-scroll{overflow-x:auto;background:var(--bg-inset);border:1px solid var(--line);border-radius:var(--radius);padding:12px;}
+  figure.diagram svg{display:block;min-width:760px;width:100%;height:auto;color:var(--ink-dim);}
+  figure.diagram figcaption{margin-top:10px;font-size:13px;color:var(--ink-faint);max-width:60ch;}
+
+  .why-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width:720px){.why-grid{grid-template-columns:1fr;}}
+  .why-card{border:1px solid var(--line-soft);border-radius:var(--radius);padding:20px;background:var(--bg-raised);}
+  .why-card .k{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);}
+  .why-card h3{margin-top:8px;font-size:16.5px;}
+  .why-card p{margin-top:8px;color:var(--ink-dim);font-size:14.5px;}
+
+  /* ---------- simulator ---------- */
+  .sim{
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:22px;
+  }
+  @media (max-width:600px){.sim{padding:16px;}}
+  .agent-row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+  }
+  .agent-chip{
+    font-family:var(--font-mono);
+    font-size:12px;
+    padding:7px 12px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    color:var(--ink-faint);
+    display:flex;
+    align-items:center;
+    gap:7px;
+    transition:border-color .25s ease,color .25s ease,background .25s ease;
+  }
+  .agent-chip .dot{width:7px;height:7px;border-radius:50%;background:var(--ink-faint);transition:background .25s ease;}
+  .agent-chip[data-status="reporting"]{color:var(--blue);border-color:var(--blue);background:var(--blue-soft);}
+  .agent-chip[data-status="reporting"] .dot{background:var(--blue);}
+  .agent-chip[data-status="flagged"]{color:var(--amber);border-color:var(--amber);background:var(--amber-soft);}
+  .agent-chip[data-status="flagged"] .dot{background:var(--amber);}
+  .agent-chip[data-status="resolved"]{color:var(--ok);border-color:var(--ok);background:var(--ok-soft);}
+  .agent-chip[data-status="resolved"] .dot{background:var(--ok);}
+  .agent-chip[data-status="unaffected"]{color:var(--ink-faint);border-style:dashed;}
+
+  .sim-grid{display:grid;grid-template-columns:1fr;gap:16px;}
+
+  .log-panel{
+    background:var(--bg-inset);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px 16px;
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    height:230px;
+    overflow-y:auto;
+  }
+  .log-line{
+    display:flex;
+    gap:8px;
+    padding-block:3px;
+    animation:fadein .3s ease both;
+  }
+  @media (prefers-reduced-motion:reduce){.log-line{animation:none;}}
+  @keyframes fadein{from{opacity:0;transform:translateY(2px);}to{opacity:1;transform:translateY(0);}}
+  .log-line .t{color:var(--ink-faint);flex:none;}
+  .log-line .tag{flex:none;font-weight:700;}
+  .log-line .tag.production{color:var(--blue);}
+  .log-line .tag.orchestrator{color:var(--amber);}
+  .log-line .tag.policy{color:#b79ad0;}
+  .log-line .tag.validator{color:var(--ok);}
+  .log-line .tag.operations,.log-line .tag.fundraising,.log-line .tag.comms,.log-line .tag.curation{color:var(--ink-dim);}
+  .log-line .txt{color:var(--ink-dim);}
+  .log-empty{color:var(--ink-faint);font-style:italic;}
+
+  .sim-controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center;}
+  .sim-hint{font-family:var(--font-mono);font-size:12px;color:var(--ink-faint);}
+
+  .decision-panel{margin-top:16px;display:grid;gap:10px;}
+  .option-btn{
+    text-align:left;
+    background:var(--bg-inset);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:13px 15px;
+    cursor:pointer;
+    color:var(--ink);
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .option-btn:hover,.option-btn:focus-visible{border-color:var(--amber);background:var(--amber-soft);outline:none;}
+  .option-btn .label{font-family:var(--font-mono);font-size:13px;color:var(--amber);}
+  .option-btn .detail{display:block;margin-top:4px;font-size:13.5px;color:var(--ink-dim);}
+
+  .summary-box{
+    margin-top:16px;
+    border:1px solid var(--ok);
+    background:var(--ok-soft);
+    border-radius:8px;
+    padding:14px 16px;
+    font-size:14px;
+    color:var(--ink);
+    display:none;
+  }
+  .summary-box.show{display:block;}
+
+  .sim-note{margin-top:14px;font-size:12.5px;color:var(--ink-faint);max-width:60ch;}
+
+  /* ---------- try it live ---------- */
+  .live-card{
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  .live-card .live-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;}
+  .live-card h3{font-size:17px;}
+  .live-card p{color:var(--ink-dim);font-size:14.5px;margin-top:8px;max-width:56ch;}
+  .live-status{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--ok);
+    border:1px solid var(--ok);
+    background:var(--ok-soft);
+    border-radius:999px;
+    padding:4px 10px;
+    white-space:nowrap;
+  }
+  .transcript{
+    background:var(--bg-inset);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:16px 18px;
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    color:var(--ink-dim);
+    max-height:280px;
+    overflow-y:auto;
+    white-space:pre-wrap;
+    line-height:1.6;
+  }
+  .transcript .who{color:var(--amber);font-weight:600;}
+  .transcript-caption{font-size:12.5px;color:var(--ink-faint);max-width:64ch;}
+
+  /* ---------- footer ---------- */
+  footer{padding-block:40px 60px;border-top:1px solid var(--line-soft);}
+  footer .disclaimer{max-width:64ch;font-size:13px;color:var(--ink-faint);line-height:1.6;}
+  footer .status-line{margin-top:16px;font-family:var(--font-mono);font-size:12px;color:var(--ink-faint);}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <div class="brand"><span class="dot" aria-hidden="true"></span> AI-DRIVEN EVENT MANAGEMENT SYSTEM</div>
+    <nav class="topnav" aria-label="Section navigation">
+      <a href="#problem">Overview</a>
+      <a href="#how-it-works">How it works</a>
+      <a href="#why-now">Why now</a>
+      <a href="#simulator">Simulator</a>
+      <a href="#live-demo">Try it live</a>
+    </nav>
+    <span class="pilot-badge">PILOT CASE · TEDx TORINO</span>
+  </div>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <div class="eyebrow">Internal R&amp;D — concept evaluation</div>
+    <h1 style="margin-top:10px;">AI-Driven Event Management System</h1>
+    <p class="hero-sub">A multi-agent assistant layer for the teams that run a live event — one agent per function, one orchestrator watching the seams between them, and a human always holding the cue to say go.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#how-it-works">See how it works ↓</a>
+      <a class="btn" href="#simulator">Run the simulator ↓</a>
+    </div>
+    <div class="crew-row" aria-label="Teams covered">
+      <span class="crew-pill">Curation</span>
+      <span class="crew-pill">Production</span>
+      <span class="crew-pill">Operations</span>
+      <span class="crew-pill">Fundraising &amp; Budget</span>
+      <span class="crew-pill">Communications &amp; Marketing</span>
+      <span class="crew-pill">HR &amp; Volunteers</span>
+    </div>
+    <div class="hero-console mono" aria-hidden="true">
+      <div class="line"><span class="t">[09:14:02]</span> <span class="tag">PRODUCTION</span> · logged: AV load-in shifted +2h00</div>
+      <div class="line"><span class="t">[09:14:04]</span> <span class="tag orc">ORCHESTRATOR</span> · cross-check found 2 downstream conflicts</div>
+      <div class="line"><span class="t">[09:14:05]</span> <span class="tag orc">ORCHESTRATOR</span> · escalated to validator — awaiting decision</div>
+    </div>
+  </section>
+
+  <section id="problem" class="section wrap">
+    <div class="section-head">
+      <span class="cue-num">CUE 01</span>
+      <h2>The problem</h2>
+    </div>
+    <p class="section-intro">A TEDx-style event — and most volunteer- or community-run conferences — is coordinated by a handful of team leads, each fluent in their own stream but working mostly blind to what the other streams are deciding in real time. Nobody is negligent; there is simply no shared, running picture of the whole event.</p>
+    <div class="cards">
+      <div class="card">
+        <div class="k">01</div>
+        <h3>No shared state</h3>
+        <p>Curation, Production, Operations, Fundraising, Communications and HR each keep their own version of the plan, updated on their own schedule.</p>
+      </div>
+      <div class="card">
+        <div class="k">02</div>
+        <h3>Conflicts surface late</h3>
+        <p>A change one team makes quietly breaks another team's plan — and it's usually caught in a spreadsheet update, a missed thread, or the week-of walkthrough.</p>
+      </div>
+      <div class="card">
+        <div class="k">03</div>
+        <h3>Coordination is unpaid time</h3>
+        <p>Most of this is run by volunteers. Every hour spent reconciling schedules is an hour not spent on the actual event.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="how-it-works" class="section wrap">
+    <div class="section-head">
+      <span class="cue-num">CUE 02</span>
+      <h2>How it works</h2>
+    </div>
+    <p class="section-intro">Three layers, deliberately low on autonomy: an assistant per team, a watcher across teams, and a rulebook that both of them have to answer to.</p>
+
+    <div class="layer-list">
+      <div class="layer">
+        <div class="name">Team agents<small>one per stream</small></div>
+        <p>Each team lead gets a dedicated assistant — closer to a secretary than a decision-maker. It drafts, tracks deadlines, keeps a running log of what changed, and checks outgoing drafts against the guidelines before they go out. It never acts outside its own team's lane.</p>
+      </div>
+      <div class="layer">
+        <div class="name">Orchestrator<small>cross-team watcher</small></div>
+        <p>Reads what every agent reports and looks for impact across streams — a schedule change that collides with someone else's booking, a budget move that affects a sponsor deliverable. It only detects and flags. Execution happens after a human validates the call.</p>
+      </div>
+      <div class="layer">
+        <div class="name">Policy engine<small>the organization's rulebook</small></div>
+        <p>Ingests the organization's own guidelines — for this pilot, TED's own Organizer Guide and published event guidelines — and checks every flagged decision and every agent draft against them, so nothing the system proposes drifts outside what's allowed.</p>
+      </div>
+    </div>
+
+    <p class="hypothesis">Team boundaries here follow TED's own Organizer Guide — Curation, Production, Event Operations, Fundraising &amp; Budget, Communications &amp; Marketing — with one deliberate addition: HR &amp; Volunteers isn't a standalone category in TED's guide, but recruiting, screening and day-of volunteer coordination are substantial enough work, drawn from direct experience running TEDx Torino, to warrant their own agent rather than folding into Operations.</p>
+
+    <figure class="diagram">
+      <div class="diagram-scroll">
+        <svg viewBox="0 0 1040 440" role="img" aria-label="Six team agents report activity to the orchestrator, which detects cross-team conflicts and escalates to a human validator; the validator's decision is executed and the affected agents are notified; a policy engine checks both the orchestrator's flags and the validator's decisions against the organization's guidelines.">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+            </marker>
+          </defs>
+
+          <!-- agent boxes -->
+          <g font-family="IBM Plex Mono, monospace" font-size="11">
+            <g>
+              <rect x="40" y="20" width="140" height="50" rx="6" fill="none" stroke="currentColor" opacity="0.7"/>
+              <text x="110" y="50" text-anchor="middle" fill="currentColor">CURATION</text>
+            </g>
+            <g>
+              <rect x="200" y="20" width="140" height="50" rx="6" fill="none" stroke="currentColor" opacity="0.7"/>
+              <text x="270" y="50" text-anchor="middle" fill="currentColor">PRODUCTION</text>
+            </g>
+            <g>
+              <rect x="360" y="20" width="140" height="50" rx="6" fill="none" stroke="currentColor" opacity="0.7"/>
+              <text x="430" y="50" text-anchor="middle" fill="currentColor">OPERATIONS</text>
+            </g>
+            <g>
+              <rect x="520" y="20" width="140" height="50" rx="6" fill="none" stroke="currentColor" opacity="0.7"/>
+              <text x="590" y="44" text-anchor="middle" fill="currentColor">FUNDRAISING /</text>
+              <text x="590" y="58" text-anchor="middle" fill="currentColor">BUDGET</text>
+            </g>
+            <g>
+              <rect x="680" y="20" width="140" height="50" rx="6" fill="none" stroke="currentColor" opacity="0.7"/>
+              <text x="750" y="44" text-anchor="middle" fill="currentColor">COMMS /</text>
+              <text x="750" y="58" text-anchor="middle" fill="currentColor">MARKETING</text>
+            </g>
+            <g>
+              <rect x="840" y="20" width="140" height="50" rx="6" fill="none" stroke="currentColor" opacity="0.7"/>
+              <text x="910" y="44" text-anchor="middle" fill="currentColor">HR /</text>
+              <text x="910" y="58" text-anchor="middle" fill="currentColor">VOLUNTEERS</text>
+            </g>
+          </g>
+
+          <!-- collector line + ticks -->
+          <line x1="110" y1="70" x2="110" y2="108" stroke="currentColor" opacity="0.5"/>
+          <line x1="270" y1="70" x2="270" y2="108" stroke="currentColor" opacity="0.5"/>
+          <line x1="430" y1="70" x2="430" y2="108" stroke="currentColor" opacity="0.5"/>
+          <line x1="590" y1="70" x2="590" y2="108" stroke="currentColor" opacity="0.5"/>
+          <line x1="750" y1="70" x2="750" y2="108" stroke="currentColor" opacity="0.5"/>
+          <line x1="910" y1="70" x2="910" y2="108" stroke="currentColor" opacity="0.5"/>
+          <line x1="110" y1="108" x2="910" y2="108" stroke="currentColor" opacity="0.5"/>
+          <line x1="510" y1="108" x2="510" y2="164" stroke="currentColor" marker-end="url(#arrow)"/>
+          <text x="520" y="98" font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor" opacity="0.8">reports activity</text>
+
+          <!-- orchestrator -->
+          <rect x="400" y="166" width="220" height="58" rx="8" fill="none" stroke="currentColor"/>
+          <text x="510" y="190" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="currentColor">ORCHESTRATOR</text>
+          <text x="510" y="207" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.75">detects cross-team impact</text>
+
+          <!-- orchestrator -> validator -->
+          <line x1="510" y1="224" x2="510" y2="264" stroke="currentColor" marker-end="url(#arrow)"/>
+          <text x="520" y="248" font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor" opacity="0.8">flags · awaits approval</text>
+
+          <!-- validator -->
+          <rect x="410" y="266" width="200" height="56" rx="8" fill="none" stroke="currentColor"/>
+          <text x="510" y="290" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="currentColor">VALIDATOR</text>
+          <text x="510" y="307" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.75">human · reviews &amp; decides</text>
+
+          <!-- validator -> execute -->
+          <line x1="510" y1="322" x2="510" y2="360" stroke="currentColor" marker-end="url(#arrow)"/>
+          <text x="520" y="346" font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor" opacity="0.8">on approval</text>
+
+          <!-- execute -->
+          <rect x="410" y="362" width="200" height="50" rx="8" fill="none" stroke="currentColor"/>
+          <text x="510" y="384" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="currentColor">EXECUTE &amp; NOTIFY</text>
+          <text x="510" y="400" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor" opacity="0.75">updates agents, logs decision</text>
+
+          <!-- execute -> back to agents -->
+          <path d="M 615 388 C 900 388 970 250 970 90" fill="none" stroke="currentColor" stroke-dasharray="4 4" marker-end="url(#arrow)" opacity="0.8"/>
+          <text x="770" y="150" font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor" opacity="0.8">notifies the agents whose stream changed</text>
+
+          <!-- policy engine -->
+          <rect x="20" y="205" width="190" height="80" rx="8" fill="none" stroke="currentColor" stroke-dasharray="2 3"/>
+          <text x="115" y="230" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="currentColor">POLICY ENGINE</text>
+          <text x="115" y="248" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="currentColor" opacity="0.75">org's own guidelines</text>
+          <text x="115" y="262" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="currentColor" opacity="0.75">(here: TED's Organizer Guide)</text>
+
+          <path d="M 210 225 L 398 196" fill="none" stroke="currentColor" stroke-dasharray="3 3" marker-end="url(#arrow)" opacity="0.7"/>
+          <path d="M 210 265 L 408 298" fill="none" stroke="currentColor" stroke-dasharray="3 3" marker-end="url(#arrow)" opacity="0.7"/>
+        </svg>
+      </div>
+      <figcaption>Every agent reports up to the orchestrator; the orchestrator only flags, never acts; a human validator decides; execution and notification happen after that decision — with the policy engine checking both the flag and the decision against the organization's own rulebook.</figcaption>
+    </figure>
+  </section>
+
+  <section id="why-now" class="section wrap">
+    <div class="section-head">
+      <span class="cue-num">CUE 03</span>
+      <h2>Why now, why this shape</h2>
+    </div>
+    <p class="section-intro">Off-the-shelf event platforms are increasingly bolting AI copilots onto their existing workflows. That's not the gap this explores.</p>
+    <div class="why-grid">
+      <div class="why-card">
+        <div class="k">Who's underserved</div>
+        <h3>Volunteer &amp; community-run events</h3>
+        <p>Enterprise event platforms are built for paid ops teams with budget. Community conferences like TEDx franchises rarely have either — this targets exactly that gap, not corporate event teams.</p>
+      </div>
+      <div class="why-card">
+        <div class="k">Why per-function agents</div>
+        <h3>Matches how the org already works</h3>
+        <p>Team leads already own a stream end to end. An assistant scoped to their stream fits how the work is actually organized, instead of forcing everyone into one shared tool.</p>
+      </div>
+      <div class="why-card">
+        <div class="k">Why a human validator</div>
+        <h3>Cheap detection, careful execution</h3>
+        <p>Letting agents flag conflicts around the clock is low-risk. Letting them execute unsupervised, days before a live event, is not — so execution stays gated on a person.</p>
+      </div>
+      <div class="why-card">
+        <div class="k">Why a policy engine</div>
+        <h3>Portable beyond TEDx</h3>
+        <p>Any franchised or brand-governed event has its own rulebook. TED's guidelines are simply the first one loaded in — the mechanism generalizes to any organization's rules.</p>
+      </div>
+    </div>
+    <p class="hypothesis">These are the bets this project is meant to test, not settled conclusions — TEDx Torino is the pilot precisely because there's enough first-hand operating experience to tell quickly whether they hold up.</p>
+  </section>
+
+  <section id="simulator" class="section wrap">
+    <div class="section-head">
+      <span class="cue-num">CUE 04</span>
+      <h2>Run the simulator</h2>
+    </div>
+    <p class="section-intro">A walk-through of one realistic conflict, end to end. The scenario and every line in the log below are illustrative — written for this demo, not pulled from a live system.</p>
+
+    <div class="sim">
+      <div class="agent-row" id="agentRow"></div>
+
+      <div class="sim-grid">
+        <div class="log-panel" id="logPanel" aria-live="polite">
+          <div class="log-empty">Simulation ready — press Start to run the scenario.</div>
+        </div>
+      </div>
+
+      <div class="decision-panel" id="decisionPanel" hidden></div>
+      <div class="summary-box" id="summaryBox"></div>
+
+      <div class="sim-controls">
+        <button class="btn btn-primary" id="primaryBtn" type="button">Start simulation</button>
+        <button class="btn" id="resetBtn" type="button" hidden>Run again</button>
+        <span class="sim-hint" id="simHint"></span>
+      </div>
+    </div>
+    <p class="sim-note">Scenario: Production shifts the AV load-in by two hours. That collides with Operations' tech-check window and Fundraising &amp; Budget's sponsor booth walkthrough. Watch how the orchestrator handles it — and how the outcome changes depending on what the validator decides.</p>
+  </section>
+
+  <section id="live-demo" class="section wrap">
+    <div class="section-head">
+      <span class="cue-num">CUE 05</span>
+      <h2>Try it live</h2>
+    </div>
+    <p class="section-intro">Beyond this scripted walkthrough, a real conversational prototype is deployed and running. It plays the Orchestrator — same concept, same guardrails, but you're talking to an actual model instead of a fixed script.</p>
+
+    <div class="live-card">
+      <div class="live-top">
+        <div>
+          <h3>event-agent-ui — talk to the Orchestrator</h3>
+          <p>Bring your own API key (Anthropic, Groq or OpenRouter) — it travels to the provider for that one request and is never stored server-side. Fine for trying it yourself, not for sharing the link with people you don't want holding your key.</p>
+        </div>
+        <span class="live-status">● live prototype</span>
+      </div>
+      <div>
+        <a class="btn btn-primary" href="https://event-agent-ui.fastwilll.workers.dev/" target="_blank" rel="noopener">Open event-agent-ui ↗</a>
+      </div>
+      <div class="transcript" aria-label="Excerpt from an actual exchange with the deployed prototype">
+<span class="who">Me:</span> Come Orchestratore gestirei un conflitto ipotetico tra il team Production e il team Sponsorship?
+
+<span class="who">Orchestrator:</span> […] 1. Raccolgo i dati dei due team. 2. Normalizzo le entità e i vincoli. 3. Confronto i vincoli per individuare violazioni. 4. Genero un flag strutturato e lo notifico al validatore con proposte di mitigazione. 5. Il policy engine verifica che la decisione finale sia conforme alle regole TED e a quelle contrattuali. 6. Emetto i comandi di attuazione per i team, mantenendo un log completo.
+
+In questo modo il conflitto viene evidenziato prima che le attività operative vengano avviate, garantendo che il rispetto delle linee guida TED e degli accordi rimanga centrale, mentre la decisione finale resta sotto il controllo umano.
+      </div>
+      <p class="transcript-caption">Unedited excerpt from a real exchange with the deployed prototype (Groq · openai/gpt-oss-120b), kept in the original Italian as generated. The full reply went well beyond this — including a JSON-shaped flag and a table of mitigation options — which is exactly what later prompted the formatting pass on <span class="mono">event-agent</span>'s system prompt.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p class="disclaimer">This is an independent R&amp;D concept, explored using TEDx Torino as a pilot case study drawn from first-hand experience organizing the 2025 and 2026 editions. It is not affiliated with, endorsed by, or produced in association with TED Conferences LLC or the official TEDx program. All figures, timestamps and log entries in the scripted simulator above are illustrative; the excerpt in "Try it live" is a real, unedited model reply.</p>
+  <p class="status-line mono">STATUS: concept evaluation — not in development · <span id="versionBadge">v0.1.0</span></p>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var AGENTS = [
+    {id:'curation',    label:'Curation'},
+    {id:'production',   label:'Production'},
+    {id:'operations',   label:'Operations'},
+    {id:'fundraising',  label:'Fundraising & Budget'},
+    {id:'comms',        label:'Communications & Marketing'},
+    {id:'hr',           label:'HR & Volunteers'}
+  ];
+
+  var agentStatus = {};
+  AGENTS.forEach(function(a){ agentStatus[a.id] = 'ready'; });
+
+  var agentRow = document.getElementById('agentRow');
+  var logPanel = document.getElementById('logPanel');
+  var decisionPanel = document.getElementById('decisionPanel');
+  var summaryBox = document.getElementById('summaryBox');
+  var primaryBtn = document.getElementById('primaryBtn');
+  var resetBtn = document.getElementById('resetBtn');
+  var simHint = document.getElementById('simHint');
+
+  function renderAgents(){
+    agentRow.innerHTML = '';
+    AGENTS.forEach(function(a){
+      var chip = document.createElement('span');
+      chip.className = 'agent-chip';
+      chip.setAttribute('data-status', agentStatus[a.id]);
+      chip.innerHTML = '<span class="dot" aria-hidden="true"></span>' + a.label;
+      agentRow.appendChild(chip);
+    });
+  }
+
+  var clockSeconds = 9*3600 + 14*60; // 09:14:00
+  function tick(){
+    clockSeconds += 1 + Math.floor(Math.random()*2);
+    var h = Math.floor(clockSeconds/3600)%24;
+    var m = Math.floor((clockSeconds%3600)/60);
+    var s = clockSeconds%60;
+    function pad(n){ return (n<10?'0':'')+n; }
+    return pad(h)+':'+pad(m)+':'+pad(s);
+  }
+
+  function clearLogIfEmptyState(){
+    var empty = logPanel.querySelector('.log-empty');
+    if(empty){ logPanel.innerHTML = ''; }
+  }
+
+  function appendLogLine(entry){
+    clearLogIfEmptyState();
+    var row = document.createElement('div');
+    row.className = 'log-line';
+    if(reduceMotion){ row.style.animation = 'none'; }
+    row.innerHTML =
+      '<span class="t">[' + tick() + ']</span>' +
+      '<span class="tag ' + entry.agent + '">' + entry.agent.toUpperCase() + '</span>' +
+      '<span class="txt">' + entry.text + '</span>';
+    logPanel.appendChild(row);
+    logPanel.scrollTop = logPanel.scrollHeight;
+  }
+
+  function appendLogLines(entries, done){
+    var i = 0;
+    function next(){
+      if(i >= entries.length){ if(done) done(); return; }
+      appendLogLine(entries[i]);
+      i++;
+      if(reduceMotion){ next(); } else { setTimeout(next, 420); }
+    }
+    next();
+  }
+
+  var STEPS = [
+    { // step 1
+      logs:[{agent:'production', text:'AV load-in rescheduled: 14:00 → 16:00 (+2h00)'}],
+      updates:{production:'reporting'}
+    },
+    { // step 2
+      logs:[
+        {agent:'orchestrator', text:'cross-checking schedule against 5 other streams…'},
+        {agent:'orchestrator', text:'conflict found — Operations: AV tech-check booked 15:30–16:30'},
+        {agent:'orchestrator', text:'conflict found — Fundraising & Budget: sponsor booth walkthrough at 15:45'}
+      ],
+      updates:{operations:'flagged', fundraising:'flagged'}
+    },
+    { // step 3
+      logs:[
+        {agent:'policy', text:"checked against TED's Organizer Guide — no rule blocks a load-in shift"},
+        {agent:'orchestrator', text:'escalating to validator — 2 conflicts, 3 possible resolutions'}
+      ],
+      showDecision:true
+    }
+  ];
+
+  var OPTIONS = [
+    {id:'approve', label:'Approve — cascade the +2h shift', detail:"Move Operations' tech-check and Fundraising & Budget's booth walkthrough by the same two hours."},
+    {id:'modify', label:'Modify — partial adjustment', detail:"Shift Operations by two hours but trim the tech-check to 30 minutes; leave Fundraising & Budget's slot untouched."},
+    {id:'reject', label:'Reject — keep the original schedule', detail:"Revert Production's load-in change; nothing else moves."}
+  ];
+
+  var RESOLUTIONS = {
+    approve:{
+      logs:[
+        {agent:'validator', text:'decision: APPROVE — cascade accepted'},
+        {agent:'orchestrator', text:'executing — updating 2 downstream agents'},
+        {agent:'operations', text:'tech-check moved to 17:30–18:30, confirmed'},
+        {agent:'fundraising', text:'booth walkthrough moved to 17:45, confirmed'}
+      ],
+      updates:{production:'resolved', operations:'resolved', fundraising:'resolved'},
+      summary:'Resolved in three steps — no team lead had to chase the other two down.'
+    },
+    modify:{
+      logs:[
+        {agent:'validator', text:'decision: MODIFY — trimmed tech-check, sponsor slot untouched'},
+        {agent:'orchestrator', text:"executing the validator's adjusted plan (not the original proposal)"},
+        {agent:'operations', text:'tech-check moved to 17:30–18:00 (30 min), confirmed'},
+        {agent:'fundraising', text:'no change — original 15:45 slot holds'}
+      ],
+      updates:{production:'resolved', operations:'resolved', fundraising:'unaffected'},
+      summary:"The validator's edit — not a straight approve — became the executed version."
+    },
+    reject:{
+      logs:[
+        {agent:'validator', text:'decision: REJECT — original schedule stands'},
+        {agent:'orchestrator', text:"reverting Production's load-in change"},
+        {agent:'production', text:'load-in reverted to 14:00, notified'}
+      ],
+      updates:{production:'unaffected', operations:'unaffected', fundraising:'unaffected'},
+      summary:'Nothing downstream ever moved — the conflict was caught before it became real work.'
+    }
+  };
+
+  var stepIndex = -1;
+  var running = false;
+
+  function applyUpdates(updates){
+    if(!updates) return;
+    Object.keys(updates).forEach(function(id){ agentStatus[id] = updates[id]; });
+    renderAgents();
+  }
+
+  function showDecisionPanel(){
+    decisionPanel.innerHTML = '';
+    OPTIONS.forEach(function(opt){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'option-btn';
+      b.innerHTML = '<span class="label">' + opt.label + '</span><span class="detail">' + opt.detail + '</span>';
+      b.addEventListener('click', function(){ chooseOption(opt.id); });
+      decisionPanel.appendChild(b);
+    });
+    decisionPanel.hidden = false;
+    primaryBtn.hidden = true;
+    simHint.textContent = 'Awaiting validator decision — pick an option.';
+  }
+
+  function chooseOption(id){
+    decisionPanel.hidden = true;
+    var res = RESOLUTIONS[id];
+    running = true;
+    appendLogLines(res.logs, function(){
+      applyUpdates(res.updates);
+      summaryBox.textContent = res.summary;
+      summaryBox.classList.add('show');
+      resetBtn.hidden = false;
+      simHint.textContent = 'Scenario complete.';
+      running = false;
+    });
+  }
+
+  function runNextStep(){
+    if(running) return;
+    stepIndex++;
+    if(stepIndex >= STEPS.length){ return; }
+    running = true;
+    var step = STEPS[stepIndex];
+    applyUpdates(step.updates);
+    appendLogLines(step.logs, function(){
+      running = false;
+      if(step.showDecision){
+        showDecisionPanel();
+      } else {
+        simHint.textContent = 'Step ' + (stepIndex+1) + ' of ' + STEPS.length + ' logged.';
+      }
+    });
+  }
+
+  function reset(){
+    AGENTS.forEach(function(a){ agentStatus[a.id] = 'ready'; });
+    renderAgents();
+    logPanel.innerHTML = '<div class="log-empty">Simulation ready — press Start to run the scenario.</div>';
+    decisionPanel.hidden = true;
+    decisionPanel.innerHTML = '';
+    summaryBox.classList.remove('show');
+    summaryBox.textContent = '';
+    stepIndex = -1;
+    running = false;
+    primaryBtn.hidden = false;
+    primaryBtn.textContent = 'Start simulation';
+    resetBtn.hidden = true;
+    simHint.textContent = '';
+  }
+
+  primaryBtn.addEventListener('click', function(){
+    if(stepIndex === -1){ primaryBtn.textContent = 'Next →'; }
+    runNextStep();
+  });
+  resetBtn.addEventListener('click', reset);
+
+  renderAgents();
+
+  // Version badge — fetched from this worker's own /__version route so the
+  // footer always reflects what's actually deployed, not just what the
+  // HTML was built with.
+  fetch('/__version').then(function(r){ return r.json(); }).then(function(v){
+    var badge = document.getElementById('versionBadge');
+    if(!badge) return;
+    var short = v.deploymentId ? v.deploymentId.slice(0, 7) : null;
+    badge.textContent = 'v' + v.version + (short ? ' · build ' + short : '');
+  }).catch(function(){ /* leave the static fallback in place */ });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,14 @@
+name = "event-overview"
+main = "src/worker.js"
+compatibility_date = "2024-09-23"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# Automatic, always-accurate deployment identifier exposed at runtime via
+# env.VERSION.id / env.VERSION.tag — combined in src/worker.js with the
+# manually-maintained APP_VERSION string so the page can show both a
+# human-readable version and a hard cross-check against what's actually live.
+[version_metadata]
+binding = "VERSION"
